@@ -1,5 +1,6 @@
 require "typograf_ru/version"
 require "typograf_ru/manager"
+require "rest_client"
 
 module TypografRu
   def self.included(base)
@@ -17,15 +18,15 @@ module TypografRu
 
       before_save :typografy_before_save
     end
-    
+
     def disable_typografy!
       Manager.clear(self)
-    end  
+    end
   end
 
   module InstanceMethods
     def typografy_before_save
-      Manager.invoke(self)
+      Manager.exec_for(self)
     end
   end
 end
