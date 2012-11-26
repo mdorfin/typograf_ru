@@ -20,7 +20,7 @@ module TypografRu
         text = object.send(attr)
         if !text.nil? && !text.empty? && (options[:no_check] || object.send("#{attr}_changed?"))
           res = RestClient.post('http://typograf.ru/webservice/', :text => text, :chr => 'UTF-8')
-          object.send("#{attr}=", res)
+          object.send("#{attr}=", res.force_encoding("UTF-8"))
         end
       end
     end

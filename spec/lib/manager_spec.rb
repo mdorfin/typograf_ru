@@ -74,7 +74,7 @@ describe TypografRu::Manager do
         object.stub(:title=)
 
         subject.register(object.class, :title)
-        RestClient.should_receive(:post).with('http://typograf.ru/webservice/', :text => object.title, :chr => 'UTF-8')
+        RestClient.should_receive(:post).with('http://typograf.ru/webservice/', :text => object.title, :chr => 'UTF-8'){ '' }
 
         subject.exec_for(object)
       end
@@ -87,7 +87,7 @@ describe TypografRu::Manager do
 
       object.should_not_receive(:title_changed?)
       subject.register(object.class, :title, :no_check => true)
-      RestClient.should_receive(:post).with('http://typograf.ru/webservice/', :text => object.title, :chr => 'UTF-8')
+      RestClient.should_receive(:post).with('http://typograf.ru/webservice/', :text => object.title, :chr => 'UTF-8'){ '' }
 
       subject.exec_for(object)
     end
@@ -106,7 +106,7 @@ describe TypografRu::Manager do
       object.stub(:title=)
 
       subject.register(object.class, :title, :if => proc{ |r| true } )
-      RestClient.should_receive(:post).with('http://typograf.ru/webservice/', :text => object.title, :chr => 'UTF-8')
+      RestClient.should_receive(:post).with('http://typograf.ru/webservice/', :text => object.title, :chr => 'UTF-8'){ '' }
 
       subject.exec_for(object)
     end
