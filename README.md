@@ -12,24 +12,22 @@ Installation
 Just add the following line to your Gemfile as usual.
 
 ```ruby
-	gem 'typograf_ru'
+  gem 'typograf_ru'
 ```
 
 and install it
 
 ```bash
-	$ bundle install
+  $ bundle install
 ```
 
 Ussage
 ======
 
 ```ruby
-
-	class Post < ActiveRecord::Base
-		typografy :content
-	end 
-
+  class Post < ActiveRecord::Base
+    typografy :content
+  end 
 ```
 
 It will format the content before save.
@@ -42,10 +40,8 @@ The ```typografy``` method supports two options:
 You can disable the gem in tests: 
 
 ```ruby
-
-	describe Post do 	
-		before { Post.disable_typografy! }
-		# ...
-	end
-	
+  describe Post do 	
+    before { Post.disable_typografy! }
+    # ...
+  end
 ```

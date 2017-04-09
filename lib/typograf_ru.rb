@@ -1,6 +1,6 @@
-require "typograf_ru/version"
-require "typograf_ru/manager"
-require "rest_client"
+require 'typograf_ru/version'
+require 'typograf_ru/manager'
+require 'rest_client'
 
 module TypografRu
   def self.included(base)
@@ -9,8 +9,7 @@ module TypografRu
   end
 
   module ClassMethods
-
-    def typografy(attr, options={})
+    def typografy(attr, options = {})
       include InstanceMethods
 
       options ||= {}

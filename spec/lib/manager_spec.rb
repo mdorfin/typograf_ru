@@ -1,47 +1,49 @@
 require 'spec_helper'
 
 describe TypografRu::Manager do
+  subject { described_class.instance }
 
-  subject{ described_class.instance }
+  before(:each) { subject.clear }
 
-  before(:each){ subject.clear }
-
-  describe "#register" do
-    it "should add new record to mapping" do
+  describe '#register' do
+    it 'should add new record to mapping' do
       expect(subject.mapping).to be_empty
       subject.register(String, :to_s, some_option: 10)
-      expect(subject.mapping).to eq(String => { to_s: { some_option: 10 }})
+      expect(subject.mapping).to eq(String => { to_s: { some_option: 10 } })
     end
   end
 
-  describe "#clear" do
-    let(:expected) do 
+  describe '#clear' do
+    let(:expected) do
       {
-        String => {to_s: {some: :conf }},
-        Fixnum => {to_s: {}}
+        String => { to_s: { some: :conf } },
+        Integer => { to_s: {} }
       }
     end
 
     before do
       subject.register(String, :to_s, some: :conf)
-      subject.register(Fixnum, :to_s)      
-      expect(subject.mapping).to eq expected     
+      subject.register(Integer, :to_s)
+      expect(subject.mapping).to eq expected
     end
 
-    it "should clear mapping for given class" do  
-      subject.clear(Fixnum)      
-      expect(subject.mapping).to eq(String => { to_s: { some: :conf }})
+    it 'should clear mapping for given class' do
+      subject.clear(Integer)
+      expect(subject.mapping).to eq(String => { to_s: { some: :conf } })
     end
 
-    it "should clear all if nil given as first arg" do
+    it 'should clear all if nil given as first arg' do
       subject.clear
       expect(subject.mapping).to eq({})
     end
   end
 
-  describe "#exec_for" do
-    before do 
-      allow(RestClient).to receive(:post).and_return(double('Response', force_encoding: true))
+  describe '#exec_for' do
+    let(:response) { double('Response', force_encoding: true) }
+    let(:url) { 'http://typograf.ru/webservice/' }
+
+    before do
+      allow(RestClient).to receive(:post).and_return(response)
     end
 
     it "should do nothing if object's class not registered" do
@@ -50,58 +52,70 @@ describe TypografRu::Manager do
     end
 
     it "should do nothing if attr's value nil or empty" do
-      object = instance_double('SomeClass', :attr_1 => nil, :attr_2 => '', 
-                                :attr_1_changed? => true, :attr_2_changed? => true)
+      object = instance_double('SomeClass', attr_1: nil, attr_2: '',
+                                            attr_1_changed?: true,
+                                            attr_2_changed?: true)
 
       subject.register(object.class, :attr_1)
-      subject.register(object.class, :attr_2)      
-      
-      subject.exec_for(object)            
+      subject.register(object.class, :attr_2)
+
+      subject.exec_for(object)
       expect(RestClient).not_to have_received(:post)
     end
 
-    context "no options were given for attr" do
+    context 'no options were given for attr' do
+      let(:error_class) { RSpec::Mocks::MockExpectationError }
+
       it "should raise error when object doesn't respond to :attr_changed?" do
         object = instance_double('SomeClass', title: 'some text')
         expect(object).to_not respond_to(:title_changed?)
         subject.register(object.class, :title)
-        expect{ subject.exec_for(object) }.to raise_error
+        expect { subject.exec_for(object) }.to raise_error(error_class)
       end
 
-      it "should change attribute value from http://typograf.ru" do
-        object = instance_double('SomeClass', :title => 'some text', :title_changed? => true, :title= => nil )
+      it 'should change attribute value from http://typograf.ru' do
+        object = instance_double('SomeClass', title: 'some text',
+                                              title_changed?: true,
+                                              'title=': nil)
         subject.register(object.class, :title)
 
         subject.exec_for(object)
-        expect(RestClient).to have_received(:post).with('http://typograf.ru/webservice/', :text => object.title, :chr => 'UTF-8'){ '' }
+        expect(RestClient).to have_received(:post)
+          .with(url, text: object.title,
+                     chr: 'UTF-8') { '' }
       end
     end
 
-    it "should not call attr_changed? when :no_check => true option is given" do
-      object = instance_double('SomeClass', :title => 'some text',  :title= => nil)
-      
+    it 'should not call attr_changed? when :no_check => true option is given' do
+      object = instance_double('SomeClass', title: 'some text', 'title=': nil)
+
       allow(object).to receive(:title_changed?)
-      subject.register(object.class, :title, :no_check => true)
+      subject.register(object.class, :title, no_check: true)
 
       subject.exec_for(object)
       expect(object).not_to have_received(:title_changed?)
-      expect(RestClient).to have_received(:post).with('http://typograf.ru/webservice/', :text => object.title, :chr => 'UTF-8'){ '' }
+      expect(RestClient).to have_received(:post)
+        .with(url, text: object.title,
+                   chr: 'UTF-8') { '' }
     end
 
-    it "should do nothing if option :if is proc and it returns false" do
+    it 'should do nothing if option :if is proc and it returns false' do
       object = instance_double('SomeClass')
-      subject.register(object.class, :title, :if => proc{ |r| false } )
+      subject.register(object.class, :title, if: proc { |_r| false })
 
       subject.exec_for(object)
       expect(RestClient).not_to have_received(:post)
     end
 
-    it "should call service if option :if is proc and it returns true" do
-      object = instance_double('SomeClass', :title => 'some text', :title_changed? => true, :title= => nil)
-      subject.register(object.class, :title, :if => proc{ |r| true } )
-    
+    it 'should call service if option :if is proc and it returns true' do
+      object = instance_double('SomeClass', title: 'some text',
+                                            title_changed?: true, 'title=': nil)
+      subject.register(object.class, :title, if: proc { |_r| true })
+
       subject.exec_for(object)
-      expect(RestClient).to have_received(:post).with('http://typograf.ru/webservice/', :text => object.title, :chr => 'UTF-8'){ '' }
+      expect(RestClient).to have_received(:post)
+        .with(url, text: object.title,
+                   chr: 'UTF-8') { '' }
     end
   end
 end
